@@ -1,0 +1,38 @@
+name: Weekly Metric Update Pipeline
+
+# Trigger: every Saturday at 01:00 UTC
+on:
+  schedule:
+    - cron: "0 1 * * 6" # At 01:00 on Saturdays
+  workflow_dispatch:    # optional: allow manual trigger from Actions tab
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-slim
+
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        working-directory: pipeline
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run updater script
+        working-directory: pipeline
+        run: |
+          source .venv/bin/activate
+          python3 main.py

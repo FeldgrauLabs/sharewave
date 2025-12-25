@@ -1,0 +1,12 @@
+[project]
+name = "pipeline"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "libsql>=0.1.11",
+    "python-dotenv>=1.2.1",
+    "scikit-learn>=1.8.0",
+    "yfinance>=1.0",
+]
