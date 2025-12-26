@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { XIcon } from "lucide-react";
-import { Data, ValidRange } from "@/lib/dataset";
+import { Data, ValidRange } from "@/lib/db";
 import { Input } from "./ui/input";
 import { Field, FieldContent } from "./ui/field";
 import { ButtonGroup } from "./ui/button-group";

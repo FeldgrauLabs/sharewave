@@ -1,6 +1,6 @@
 'use client';
 
-import { Data, ValidRange } from '@/lib/dataset';
+import { Data, ValidRange } from '@/lib/db';
 import {
   ScatterChart,
   Scatter,
@@ -33,8 +33,8 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
   const data = tickers
     .filter((t) => t.cagr[range] !== null && t.risk[range] !== null)
     .map((t) => {
-      const riskPct = +(t.risk[range]! * 100).toFixed(2);
-      const returnPct = +(t.cagr[range]! * 100).toFixed(2);
+      const riskPct = +(t.risk[range]!).toFixed(2);
+      const returnPct = +(t.cagr[range]!).toFixed(2);
       const rr = t.risk[range]! > 0 ? t.cagr[range]! / t.risk[range]! : t.cagr[range]! * 1000;
       const returnRiskRatio = +rr.toFixed(2);
       return {
@@ -170,7 +170,7 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
                   if (active && payload?.length) {
                     const d = payload[0].payload;
                     return (
-                      <div className="rounded-md border bg-white p-2 shadow">
+                      <div className="rounded-md border bg-white p-2 shadow min-w-48">
                         <p className="font-semibold mb-2">{d.name} ({d.ticker})</p>
                         <div className='flex flex-col'>
                           <div className='flex flex-row items-center justify-between'>
