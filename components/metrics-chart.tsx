@@ -171,7 +171,7 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
                     const d = payload[0].payload;
                     return (
                       <div className="rounded-md border bg-white p-2 shadow min-w-48">
-                        <p className="font-semibold mb-2">{d.name} ({d.ticker})</p>
+                        <p className="font-semibold mb-2">{d.ticker}</p>
                         <div className='flex flex-col'>
                           <div className='flex flex-row items-center justify-between'>
                             <p>Risk (%)</p>

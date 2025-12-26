@@ -79,7 +79,7 @@ function SearchBox({
         <FieldContent>
           <Input
             aria-label="Search tickers"
-            placeholder={maxReached ? `Maximum ${MaxTickers} tickers selected` : "Search ticker or name"}
+            placeholder={maxReached ? `Maximum ${MaxTickers} tickers selected` : "Search tickers..."}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             disabled={maxReached}
@@ -103,7 +103,7 @@ function SearchBox({
                     setOpen(false);
                   }}
                 >
-                  {item.ticker} - {item.name}
+                  {item.ticker}
                 </Button>
               ))}
             </div>
@@ -150,7 +150,7 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
 
   return (
     <form onSubmit={handleApply} className="w-full">
-      <Card className="min-h-[560px] flex flex-col w-full z-50 max-h-screen overflow-auto">
+      <Card className="min-h-[564px] flex flex-col w-full z-50 max-h-screen overflow-auto">
         <CardHeader>
           <div className="flex flex-row items-center">
             <h2 className="text-lg font-medium">Configuration</h2>

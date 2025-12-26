@@ -1,4 +1,5 @@
 import MetricsChart from "@/components/metrics-chart";
+import { MetricsTable } from "@/components/metrics-table";
 import { TickerSelector } from "@/components/ticker-selector";
 import { getDataset, ValidRange } from "@/lib/db";
 
@@ -32,14 +33,18 @@ export default async function Page({
   return (
     <div className="h-screen py-8 w-full max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Stock Data Viewer</h1>
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-4">
-          <TickerSelector tickers={cappedTickers} range={range} />
-        </div>
+      <div className="flex flex-col gap-4 py-4">
+        <div className="grid grid-cols-12 gap-2">
+          <div className="col-span-4">
+            <TickerSelector tickers={cappedTickers} range={range} />
+          </div>
 
-        <div className="col-span-8">
-          <MetricsChart tickers={cappedTickers} range={range} />
+          <div className="col-span-8">
+            <MetricsChart tickers={cappedTickers} range={range} />
+          </div>
+
         </div>
+        <MetricsTable tickers={cappedTickers} range={range} />
       </div>
     </div>
   )
