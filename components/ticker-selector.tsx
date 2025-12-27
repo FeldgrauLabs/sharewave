@@ -3,14 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-import { toast, Toaster } from 'sonner';
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
-import { XIcon } from "lucide-react";
+import { Columns2Icon, XIcon } from "lucide-react";
 import { Data, ValidRange } from "@/lib/db";
 import { Input } from "./ui/input";
 import { Field, FieldContent } from "./ui/field";
 import { ButtonGroup } from "./ui/button-group";
 import { MaxTickers } from "@/app/page";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { PortfolioThemes } from "@/lib/portfolio-theme";
 
 interface TickerSelectorProps {
   tickers: Data[];
@@ -119,9 +120,10 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
   const router = useRouter();
   const pathname = usePathname() ?? "/";
   const [selected, setSelected] = useState<Data[]>(() => {
-    return [...tickers].sort((a, b) => a.ticker.localeCompare(b.ticker));
+    return tickers.sort((a, b) => a.ticker.localeCompare(b.ticker));
   });
   const [range, setRange] = useState<ValidRange>(initialRange ?? '3y');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleRemove = (ticker: string) => {
     setSelected((prev) => {
@@ -146,16 +148,43 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
     if (tickersOnly.length) qs.set("tickers", tickersOnly.join(","));
     if (range) qs.set("range", range);
     const url = qs.toString() ? `${pathname}?${qs.toString()}` : pathname;
-    router.push(url);
+    router.replace(url);
+    router.refresh();
   };
+
+  const handlePortfolioThemeApply = (themeTickers: string[]) => {
+    // update local selected state immediately so the UI rerenders
+    const next = themeTickers.slice(0, MaxTickers).map((t) => ({
+      ticker: t,
+      name: t,
+      cagr: {} as any,
+      risk: {} as any,
+      last_updated: '',
+      earliest_data: '',
+    }));
+    setSelected(() => [...next].sort((a, b) => a.ticker.localeCompare(b.ticker)));
+    setIsDialogOpen(false);
+
+    const qs = new URLSearchParams();
+    if (range) qs.set("range", range);
+    qs.set("tickers", themeTickers.slice(0, MaxTickers).join(","));
+    const url = qs.toString() ? `${pathname}?${qs.toString()}` : pathname;
+    router.replace(url);
+    router.refresh();
+  }
 
   return (
     <form onSubmit={handleApply} className="w-full">
       <Card className="min-h-[564px] flex flex-col w-full z-50 max-h-screen overflow-auto">
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <div className="flex flex-row items-center">
             <h2 className="text-lg font-medium">Configuration</h2>
           </div>
+          <PortfolioSelectDialog
+            isOpen={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            onApplyTheme={handlePortfolioThemeApply}
+          />
         </CardHeader>
 
         <CardContent className="flex-1 overflow-auto py-2">
@@ -232,6 +261,59 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
           </div>
         </CardFooter>
       </Card>
-    </form>
+    </form >
   );
+}
+
+function PortfolioSelectDialog({
+  isOpen,
+  onOpenChange,
+  onApplyTheme,
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onApplyTheme: (themeTickers: string[]) => void;
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <Button
+        type='button'
+        variant='outline'
+        size='icon-sm'
+        onClick={() => onOpenChange(true)}
+      >
+        <Columns2Icon />
+      </Button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Choose Portfolio Theme</DialogTitle>
+        </DialogHeader>
+        <div className="mt-2 space-y-3 max-h-64 overflow-auto">
+          {PortfolioThemes.map((theme) => (
+            <div
+              key={theme.name}
+              className={`p-3 rounded border cursor-pointer border-transparent hover:border-slate-200`}
+              onClick={() => {
+                onApplyTheme(theme.tickers)
+                onOpenChange(false);
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="font-medium">{theme.name}</div>
+                <div className="text-xs text-slate-500">{theme.tickers.length} tickers</div>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                {theme.tickers.map((t) => (
+                  <div
+                    key={t}
+                    className="px-2 py-1 rounded bg-slate-100 text-slate-700"
+                  >{t}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }

@@ -45,7 +45,7 @@ const highlightImmatureData = (dateStr: string, targetRange: ValidRange) => {
   // 1 month buffer
   const bufferMs = 30 * 24 * 60 * 60 * 1000;
   const requiredDate = new Date(now.getFullYear() - requiredYears, now.getMonth(), now.getDate() - 1);
-  return date.getTime() + bufferMs > requiredDate.getTime();
+  return date.getTime() - bufferMs > requiredDate.getTime();
 }
 
 export const MetricsTable = ({ tickers, range }: MetricsTableProps) => {
@@ -98,9 +98,9 @@ export const MetricsTable = ({ tickers, range }: MetricsTableProps) => {
               const earliestData = new Date(t.earliest_data);
               const now = new Date();
               const requiredStartDate = new Date(now.getFullYear() - parseInt(range.replace('y', '')), now.getMonth(), now.getDate() - 1);
-              if (earliestData > requiredStartDate) {
-                // Data does not cover the requested range, treat as immature
-                earliestData.setTime(earliestData.getTime() + 1000 * 60 * 60 * 24); // add 1 day to trigger immature
+              if (earliestData < requiredStartDate) {
+                console.log(`Adjusting earliest data for ${t.ticker} from ${earliestData.toISOString()} to ${requiredStartDate.toISOString()}`);
+                earliestData.setTime(requiredStartDate.getTime());
               }
 
               return (
@@ -110,7 +110,7 @@ export const MetricsTable = ({ tickers, range }: MetricsTableProps) => {
                   <TableCell className="text-right tabular-nums">{formatMetric(risk)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMetric(rr)}</TableCell>
                   <TableCell className={`text-right tabular-nums ${isMature ? '' : 'text-yellow-500'}`}>
-                    {formatDate(t.earliest_data, false)}
+                    {formatDate(earliestData.toISOString(), false)}
                   </TableCell>
                   <TableCell className="text-right">{formatDate(t.last_updated)}</TableCell>
                 </TableRow>
