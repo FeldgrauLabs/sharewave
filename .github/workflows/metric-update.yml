@@ -35,4 +35,6 @@ jobs:
         working-directory: pipeline
         run: |
           source .venv/bin/activate
-          python3 main.py
+          python3 main.py ../dataset/us-nasdaq100.txt
+          python3 main.py ../dataset/us-sp100.txt
+          python3 main.py ../dataset/au-asx50.txt
