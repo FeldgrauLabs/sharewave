@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "./ui/button";
+import { toast, Toaster } from 'sonner';
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { XIcon } from "lucide-react";
 import { Data, ValidRange } from "@/lib/db";
@@ -194,35 +195,41 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
         </CardContent>
 
         <CardFooter className="flex items-center justify-between">
-          <ButtonGroup>
+          <div className="flex items-center space-x-2">
+            <ButtonGroup>
+              <Button
+                type='button'
+                onClick={() => setRange('3y')}
+                variant={range === '3y' ? 'default' : 'outline'}
+              >
+                3Y
+              </Button>
+              <Button
+                type='button'
+                onClick={() => setRange('5y')}
+                variant={range === '5y' ? 'default' : 'outline'}
+              >
+                5Y
+              </Button>
+              <Button
+                type='button'
+                onClick={() => setRange('10y')}
+                variant={range === '10y' ? 'default' : 'outline'}
+              >
+                10Y
+              </Button>
+            </ButtonGroup>
+          </div>
+
+          <div className="flex items-center space-x-4">
             <Button
-              type='button'
-              onClick={() => setRange('3y')}
-              variant={range === '3y' ? 'default' : 'outline'}
+              type="submit"
+              variant='default'
+              disabled={selected.length === 0}
             >
-              3Y
+              Apply
             </Button>
-            <Button
-              type='button'
-              onClick={() => setRange('5y')}
-              variant={range === '5y' ? 'default' : 'outline'}
-            >
-              5Y
-            </Button>
-            <Button
-              type='button'
-              onClick={() => setRange('10y')}
-              variant={range === '10y' ? 'default' : 'outline'}
-            >
-              10Y
-            </Button>
-          </ButtonGroup>
-          <Button
-            type="submit"
-            variant='default'
-          >
-            Apply
-          </Button>
+          </div>
         </CardFooter>
       </Card>
     </form>

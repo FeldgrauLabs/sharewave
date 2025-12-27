@@ -13,10 +13,12 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Separator } from './ui/separator';
-import { BookmarkIcon, BookmarkXIcon, EqualIcon, EqualNotIcon, Grid2X2Icon, Grid2X2XIcon, TriangleAlertIcon } from 'lucide-react';
+import { BookmarkIcon, BookmarkXIcon, EqualIcon, EqualNotIcon, Grid2X2Icon, Grid2X2XIcon, ImageIcon, MoreHorizontalIcon, PaperclipIcon, SheetIcon, TriangleAlertIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from './ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface RiskReturnChartProps {
   tickers: Data[];
@@ -29,6 +31,115 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
   const [showMean, setShowMean] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
+
+  const share = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copied to clipboard!');
+  }
+
+  const exportCSV = () => {
+    const header = ['Ticker', 'Name', 'Risk (%)', 'CAGR (%)', 'Return/Risk'];
+    const rows = tickers
+      .filter((t) => t.cagr[range] !== null && t.risk[range] !== null)
+      .map((t) => {
+        const riskPct = +(t.risk[range]!).toFixed(2);
+        const returnPct = +(t.cagr[range]!).toFixed(2);
+        const rr = t.risk[range]! > 0 ? t.cagr[range]! / t.risk[range]! : t.cagr[range]! * 1000;
+        const returnRiskRatio = +rr.toFixed(2);
+        return [t.ticker, t.name, riskPct, returnPct, returnRiskRatio];
+      });
+
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    csvContent += header.join(',') + '\n';
+    rows.forEach(row => {
+      csvContent += row.join(',') + '\n';
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `risk_return_${range}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const chartRef = useRef<HTMLDivElement | null>(null);
+
+  const exportImage = async () => {
+    try {
+      if (!chartRef.current) {
+        toast.error('Chart not found');
+        return;
+      }
+      const svg = chartRef.current.querySelector('svg') as SVGSVGElement | null;
+      if (!svg) {
+        toast.error('SVG element not found');
+        return;
+      }
+
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+
+      // add name spaces if they are missing
+      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      if (!source.match(/^<svg[^>]+xmlns:xlink=/)) {
+        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+      }
+
+      const width = svg.clientWidth || svg.getBoundingClientRect().width;
+      const height = svg.clientHeight || svg.getBoundingClientRect().height;
+      const ratio = window.devicePixelRatio || 1;
+
+      const img = new Image();
+      const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(width * ratio));
+          canvas.height = Math.max(1, Math.round(height * ratio));
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Failed to get canvas context');
+          // white background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              toast.error('Failed to export image');
+              URL.revokeObjectURL(url);
+              return;
+            }
+            const link = document.createElement('a');
+            const blobUrl = URL.createObjectURL(blob);
+            link.href = blobUrl;
+            link.download = `risk_return_${range}_${new Date().toISOString()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+            URL.revokeObjectURL(url);
+            toast.success('Image exported');
+          }, 'image/png');
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          toast.error('Failed to export image');
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        toast.error('Failed to load SVG for export');
+      };
+      img.src = url;
+    } catch (err) {
+      toast.error('Unexpected error exporting image');
+    }
+  }
 
   const data = tickers
     .filter((t) => t.cagr[range] !== null && t.risk[range] !== null)
@@ -113,11 +224,54 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
             >
               Grid {showGrid ? <Grid2X2Icon /> : <Grid2X2XIcon />}
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon-sm" aria-label="More Options">
+                  <MoreHorizontalIcon />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => share()}
+                    disabled={data.length === 0}
+                  >
+                    <PaperclipIcon />
+                    Share
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => exportCSV()}
+                    disabled={data.length === 0}
+                  >
+                    <SheetIcon />
+                    Export as CSV/Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => exportImage()}
+                    disabled={data.length === 0}
+                  >
+                    <ImageIcon />
+                    Export as Image
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
       <CardContent className="min-h-0 w-full overflow-hidden">
-        <div className="w-full h-full overflow-hidden">
+        <div ref={chartRef} className="relative w-full h-full overflow-hidden">
+          {data.length === 0 && (
+            <div className='absolute top-4 right-4 inset-10 flex items-center justify-center z-10'>
+              <div className="bg-gray-50 border rounded-lg p-6 flex flex-col items-center justify-center h-24 z-10">
+                <p className="text-lg font-medium text-slate-700">No data to display</p>
+                <p className="text-sm text-slate-500">Select tickers and/or change the range to populate the chart.</p>
+              </div>
+            </div>
+          )}
           <ResponsiveContainer width="100%" height={450}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               {showGrid && (

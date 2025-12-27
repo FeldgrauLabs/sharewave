@@ -3,9 +3,6 @@ import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, Tabl
 import { Card, CardContent } from "./ui/card";
 import { InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
-import { Tooltip, TooltipTrigger } from "./ui/tooltip";
-import { TooltipContent } from "@radix-ui/react-tooltip";
-import { InfoIcon } from "lucide-react";
 
 interface MetricsTableProps {
   tickers: Data[];
@@ -120,23 +117,23 @@ export const MetricsTable = ({ tickers, range }: MetricsTableProps) => {
               );
             })}
           </TableBody>
-          <TableFooter>
-            {/* Show the mean values for each metric */}
-            <TableRow>
-              <TableCell className="font-medium">
-                <div className="flex gap-2">
-                  <span className="italic">Mean</span>
-                  {/* Sample mean notation */}
-                  <InlineMath math="(\bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i)" />
-                </div>
-              </TableCell>
-              <TableCell className="italic text-right tabular-nums">{formatMetric(cagrMean)}</TableCell>
-              <TableCell className="italic text-right tabular-nums">{formatMetric(riskMean)}</TableCell>
-              <TableCell className="italic text-right tabular-nums">{formatMetric(rrMean)}</TableCell>
-              <TableCell className="italic text-right">-</TableCell>
-              <TableCell className="italic text-right">-</TableCell>
-            </TableRow>
-          </TableFooter>
+          {tickers.length > 0 && (
+            <TableFooter>
+              <TableRow>
+                <TableCell className="font-medium">
+                  <div className="flex gap-2">
+                    <span className="italic">Mean</span>
+                    <InlineMath math="(\bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i)" />
+                  </div>
+                </TableCell>
+                <TableCell className="italic text-right tabular-nums">{formatMetric(cagrMean)}</TableCell>
+                <TableCell className="italic text-right tabular-nums">{formatMetric(riskMean)}</TableCell>
+                <TableCell className="italic text-right tabular-nums">{formatMetric(rrMean)}</TableCell>
+                <TableCell className="italic text-right">-</TableCell>
+                <TableCell className="italic text-right">-</TableCell>
+              </TableRow>
+            </TableFooter>
+          )}
         </Table>
       </CardContent>
     </Card>
