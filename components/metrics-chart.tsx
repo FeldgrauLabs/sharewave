@@ -19,6 +19,7 @@ import { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { toast } from 'sonner';
+import { MainCard } from './main-card';
 
 interface RiskReturnChartProps {
   tickers: Data[];
@@ -178,216 +179,205 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
   const meanRisk = data.length ? data.reduce((sum, d) => sum + d.risk, 0) / data.length : 0;
   const meanReturn = data.length ? data.reduce((sum, d) => sum + d.return, 0) / data.length : 0;
 
-  return (
-    <Card className='flex h-full w-full'>
-      <CardHeader>
-        <div className='flex flex-row items-center justify-between'>
-
-          <div className='flex flex-row gap-2 items-center'>
-            <h2 className="text-lg font-medium">Risk vs. CAGR ({range.toUpperCase()})</h2>
-            {hasInsufficientData && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TriangleAlertIcon className='text-yellow-600' size={18} />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className='max-w-xs'>Some selected tickers have insufficient data for the chosen range and are not displayed in the chart.</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-          <div data-testid='controls' className='flex flex-row gap-2 items-center'>
-            <Button
-              variant='outline'
-              size='sm'
-              type='button'
-              aria-label='Toggle Mean Lines'
-              onClick={() => setShowMean(!showMean)}
-            >
-              Mean {showMean ? <EqualIcon /> : <EqualNotIcon />}
-            </Button>
-            <Button
-              variant='outline'
-              size='sm'
-              type='button'
-              aria-label='Toggle Labels'
-              onClick={() => setShowLabels(!showLabels)}
-            >
-              Label {showLabels ? <BookmarkIcon /> : <BookmarkXIcon />}
-            </Button>
-            <Button
-              variant='outline'
-              size='sm'
-              type='button'
-              aria-label='Toggle Grid'
-              onClick={() => setShowGrid(!showGrid)}
-            >
-              Grid {showGrid ? <Grid2X2Icon /> : <Grid2X2XIcon />}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon-sm" aria-label="More Options">
-                  <MoreHorizontalIcon />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => share()}
-                    disabled={data.length === 0}
-                  >
-                    <PaperclipIcon />
-                    Share
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => exportCSV()}
-                    disabled={data.length === 0}
-                  >
-                    <SheetIcon />
-                    Export as CSV/Excel
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => exportImage()}
-                    disabled={data.length === 0}
-                  >
-                    <ImageIcon />
-                    Export as Image
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+  const mainContent = (
+    <div ref={chartRef} className="relative w-full h-full overflow-hidden">
+      {data.length === 0 && (
+        <div className='absolute top-4 right-4 inset-10 flex items-center justify-center z-10'>
+          <div className="bg-gray-50 border rounded-lg p-6 flex flex-col items-center justify-center h-24 z-10">
+            <p className="text-lg font-medium text-slate-700">No data to display</p>
+            <p className="text-sm text-slate-500">Select tickers and/or change the range to populate the chart.</p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="min-h-0 w-full overflow-hidden">
-        <div ref={chartRef} className="relative w-full h-full overflow-hidden">
-          {data.length === 0 && (
-            <div className='absolute top-4 right-4 inset-10 flex items-center justify-center z-10'>
-              <div className="bg-gray-50 border rounded-lg p-6 flex flex-col items-center justify-center h-24 z-10">
-                <p className="text-lg font-medium text-slate-700">No data to display</p>
-                <p className="text-sm text-slate-500">Select tickers and/or change the range to populate the chart.</p>
-              </div>
-            </div>
+      )}
+      <ResponsiveContainer width="100%" height={450}>
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+          {showGrid && (
+            <CartesianGrid strokeDasharray="3 3" />
           )}
-          <ResponsiveContainer width="100%" height={450}>
-            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              {showGrid && (
-                <CartesianGrid strokeDasharray="3 3" />
-              )}
-              {showMean && (
-                <>
-                  <ReferenceLine
-                    x={meanRisk}
-                    stroke={MeanLineColor}
-                    strokeDasharray="3 3"
-                    strokeWidth={1}
-                    label={{
-                      value: `Mean ${meanRisk.toFixed(2)}`,
-                      position: 'insideTopRight',
-                      fontSize: 10,
-                    }} />
-                  <ReferenceLine
-                    y={meanReturn}
-                    stroke={MeanLineColor}
-                    strokeDasharray="3 3"
-                    strokeWidth={1}
-                    label={{ value: `Mean ${meanReturn.toFixed(2)}`, position: 'insideTopRight', fontSize: 10 }}
-                  />
-                </>
-              )}
-              <XAxis
-                type="number"
-                dataKey="risk"
-                name="Risk (%)"
-                domain={domain}
-                label={{ value: 'Risk (%)', position: 'bottom', offset: 0 }}
+          {showMean && (
+            <>
+              <ReferenceLine
+                x={meanRisk}
+                stroke={MeanLineColor}
+                strokeDasharray="3 3"
+                strokeWidth={1}
+                label={{
+                  value: `Mean ${meanRisk.toFixed(2)}`,
+                  position: 'insideTopRight',
+                  fontSize: 10,
+                }} />
+              <ReferenceLine
+                y={meanReturn}
+                stroke={MeanLineColor}
+                strokeDasharray="3 3"
+                strokeWidth={1}
+                label={{ value: `Mean ${meanReturn.toFixed(2)}`, position: 'insideTopRight', fontSize: 10 }}
               />
-              <YAxis
-                type="number"
-                dataKey="return"
-                name="CAGR (%)"
-                domain={domain}
-                label={{ value: 'CAGR (%)', angle: -90, position: 'insideLeft', offset: 0 }}
-              />
-              <div className="flex items-center gap-4 mb-2">
-                <div className="text-sm text-muted-foreground">Return/Risk</div>
-                <div className="w-44 h-2 rounded-md" style={{ background: 'linear-gradient(90deg, #ef4444, #f59e0b, #16a34a)' }} />
-                <div className="text-xs text-muted-foreground">{minRatio.toFixed(2)}</div>
-                <div className="text-xs text-muted-foreground ml-auto">{maxRatio.toFixed(2)}</div>
-              </div>
-              <ChartTooltip
-                cursor={{ strokeDasharray: '3 3' }}
-                content={({ active, payload }) => {
-                  if (active && payload?.length) {
-                    const d = payload[0].payload;
-                    return (
-                      <div className="rounded-md border bg-white p-2 shadow min-w-48">
-                        <p className="font-semibold mb-2">{d.ticker}</p>
-                        <div className='flex flex-col'>
-                          <div className='flex flex-row items-center justify-between'>
-                            <p>Risk (%)</p>
-                            <div className='font-mono'>{d.risk}</div>
-                          </div>
-                          <div className='flex flex-row items-center justify-between'>
-                            <p>CAGR (%)</p>
-                            <div className='font-mono'>{d.return}</div>
-                          </div>
-                        </div>
-                        <Separator className='my-1' />
-                        <div className='flex flex-row items-center justify-between'>
-                          <p>Return/Risk</p>
-                          <div className='font-mono'>{d.returnRiskRatio}</div>
-                        </div>
+            </>
+          )}
+          <XAxis
+            type="number"
+            dataKey="risk"
+            name="Risk (%)"
+            domain={domain}
+            label={{ value: 'Risk (%)', position: 'bottom', offset: 0 }}
+          />
+          <YAxis
+            type="number"
+            dataKey="return"
+            name="CAGR (%)"
+            domain={domain}
+            label={{ value: 'CAGR (%)', angle: -90, position: 'insideLeft', offset: 0 }}
+          />
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-sm text-muted-foreground">Return/Risk</div>
+            <div className="w-44 h-2 rounded-md" style={{ background: 'linear-gradient(90deg, #ef4444, #f59e0b, #16a34a)' }} />
+            <div className="text-xs text-muted-foreground">{minRatio.toFixed(2)}</div>
+            <div className="text-xs text-muted-foreground ml-auto">{maxRatio.toFixed(2)}</div>
+          </div>
+          <ChartTooltip
+            cursor={{ strokeDasharray: '3 3' }}
+            content={({ active, payload }) => {
+              if (active && payload?.length) {
+                const d = payload[0].payload;
+                return (
+                  <div className="rounded-md border bg-white p-2 shadow min-w-48">
+                    <p className="font-semibold mb-2">{d.ticker}</p>
+                    <div className='flex flex-col'>
+                      <div className='flex flex-row items-center justify-between'>
+                        <p>Risk (%)</p>
+                        <div className='font-mono'>{d.risk}</div>
                       </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              {/* Render all labels first so dots draw on top */}
-              {showLabels && (
-                <Scatter
-                  data={points}
-                  shape={(props: any) => {
-                    const { cx, cy, payload } = props;
-                    if (cx == null || cy == null) return null;
-                    return (
-                      <text
-                        x={cx + 8}
-                        y={cy}
-                        fill="#0f172a"
-                        fontSize={10}
-                        dominantBaseline="middle"
-                        textAnchor="start"
-                        style={{ pointerEvents: 'none' }}
-                      >
-                        {payload.ticker}
-                      </text>
-                    );
-                  }}
-                />
-              )}
+                      <div className='flex flex-row items-center justify-between'>
+                        <p>CAGR (%)</p>
+                        <div className='font-mono'>{d.return}</div>
+                      </div>
+                    </div>
+                    <Separator className='my-1' />
+                    <div className='flex flex-row items-center justify-between'>
+                      <p>Return/Risk</p>
+                      <div className='font-mono'>{d.returnRiskRatio}</div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          {/* Render all labels first so dots draw on top */}
+          {showLabels && (
+            <Scatter
+              data={points}
+              shape={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (cx == null || cy == null) return null;
+                return (
+                  <text
+                    x={cx + 8}
+                    y={cy}
+                    fill="#0f172a"
+                    fontSize={10}
+                    dominantBaseline="middle"
+                    textAnchor="start"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    {payload.ticker}
+                  </text>
+                );
+              }}
+            />
+          )}
 
-              {/* Render dots after labels so they appear above */}
-              <Scatter
-                data={points}
-                shape={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  if (cx == null || cy == null) return null;
-                  return (
-                    <circle cx={cx} cy={cy} r={5} fill={payload.color} stroke="#111827" strokeWidth={0.5} />
-                  );
-                }}
-              />
-            </ScatterChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+          {/* Render dots after labels so they appear above */}
+          <Scatter
+            data={points}
+            shape={(props: any) => {
+              const { cx, cy, payload } = props;
+              if (cx == null || cy == null) return null;
+              return (
+                <circle cx={cx} cy={cy} r={5} fill={payload.color} stroke="#111827" strokeWidth={0.5} />
+              );
+            }}
+          />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
   );
+
+  const title = `Risk vs. CAGR (${range.toUpperCase()})`;
+
+  return (
+    <MainCard
+      title={title}
+      headerAction={
+        <div data-testid='controls' className='flex flex-row gap-2 items-center'>
+          <Button
+            variant='outline'
+            size='sm'
+            type='button'
+            aria-label='Toggle Mean Lines'
+            onClick={() => setShowMean(!showMean)}
+          >
+            Mean {showMean ? <EqualIcon /> : <EqualNotIcon />}
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            type='button'
+            aria-label='Toggle Labels'
+            onClick={() => setShowLabels(!showLabels)}
+          >
+            Label {showLabels ? <BookmarkIcon /> : <BookmarkXIcon />}
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            type='button'
+            aria-label='Toggle Grid'
+            onClick={() => setShowGrid(!showGrid)}
+          >
+            Grid {showGrid ? <Grid2X2Icon /> : <Grid2X2XIcon />}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon-sm" aria-label="More Options">
+                <MoreHorizontalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => share()}
+                  disabled={data.length === 0}
+                >
+                  <PaperclipIcon />
+                  Share
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => exportCSV()}
+                  disabled={data.length === 0}
+                >
+                  <SheetIcon />
+                  Export as CSV/Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => exportImage()}
+                  disabled={data.length === 0}
+                >
+                  <ImageIcon />
+                  Export as Image
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      }
+      children={mainContent}
+    />
+  )
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

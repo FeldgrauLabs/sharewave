@@ -10,8 +10,9 @@ import { Input } from "./ui/input";
 import { Field, FieldContent } from "./ui/field";
 import { ButtonGroup } from "./ui/button-group";
 import { MaxTickers } from "@/app/page";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { PortfolioThemes } from "@/lib/portfolio-theme";
+import { SideCard } from "./side-card";
 
 interface TickerSelectorProps {
   tickers: Data[];
@@ -175,19 +176,16 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
 
   return (
     <form onSubmit={handleApply} className="w-full">
-      <Card className="min-h-[564px] flex flex-col w-full z-50 max-h-screen overflow-auto">
-        <CardHeader className="flex items-center justify-between">
-          <div className="flex flex-row items-center">
-            <h2 className="text-lg font-medium">Configuration</h2>
-          </div>
+      <SideCard
+        title="Configuration"
+        headerAction={
           <PortfolioSelectDialog
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
             onApplyTheme={handlePortfolioThemeApply}
           />
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-auto py-2">
+        }
+        children={
           <div>
             <SearchBox
               onAdd={handleAdd}
@@ -221,46 +219,47 @@ export function TickerSelector({ tickers, range: initialRange }: TickerSelectorP
               <p className="text-sm text-red-500 mt-2">Maximum {MaxTickers} tickers selected.</p>
             )}
           </div>
-        </CardContent>
+        }
+        footer={
+          <>
+            <div className="flex items-center space-x-2">
+              <ButtonGroup>
+                <Button
+                  type='button'
+                  onClick={() => setRange('3y')}
+                  variant={range === '3y' ? 'default' : 'outline'}
+                >
+                  3Y
+                </Button>
+                <Button
+                  type='button'
+                  onClick={() => setRange('5y')}
+                  variant={range === '5y' ? 'default' : 'outline'}
+                >
+                  5Y
+                </Button>
+                <Button
+                  type='button'
+                  onClick={() => setRange('10y')}
+                  variant={range === '10y' ? 'default' : 'outline'}
+                >
+                  10Y
+                </Button>
+              </ButtonGroup>
+            </div>
 
-        <CardFooter className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <ButtonGroup>
+            <div className="flex items-center space-x-4">
               <Button
-                type='button'
-                onClick={() => setRange('3y')}
-                variant={range === '3y' ? 'default' : 'outline'}
+                type="submit"
+                variant='default'
+                disabled={selected.length === 0}
               >
-                3Y
+                Apply
               </Button>
-              <Button
-                type='button'
-                onClick={() => setRange('5y')}
-                variant={range === '5y' ? 'default' : 'outline'}
-              >
-                5Y
-              </Button>
-              <Button
-                type='button'
-                onClick={() => setRange('10y')}
-                variant={range === '10y' ? 'default' : 'outline'}
-              >
-                10Y
-              </Button>
-            </ButtonGroup>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <Button
-              type="submit"
-              variant='default'
-              disabled={selected.length === 0}
-            >
-              Apply
-            </Button>
-          </div>
-        </CardFooter>
-      </Card>
+            </div>
+          </>
+        }
+      />
     </form >
   );
 }
