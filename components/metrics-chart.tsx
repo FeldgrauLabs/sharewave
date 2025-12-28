@@ -192,7 +192,7 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
               data={points}
               shape={(props: any) => {
                 const { cx, cy, payload } = props;
-                if (cx == null || cy == null) return null;
+                if (cx == null || cy == null) return <></>;
                 return (
                   <text
                     x={cx + 8}
@@ -215,7 +215,7 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
             data={points}
             shape={(props: any) => {
               const { cx, cy, payload } = props;
-              if (cx == null || cy == null) return null;
+              if (cx == null || cy == null) return <></>;
               return (
                 <circle cx={cx} cy={cy} r={5} fill={payload.color} stroke="#111827" strokeWidth={0.5} />
               );
