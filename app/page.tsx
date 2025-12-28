@@ -30,11 +30,9 @@ export default async function Page({
   const tickers = await getDataset(rawTickers);
   const cappedTickers = tickers.slice(0, MaxTickers);
 
-  console.log(cappedTickers.map(t => t.ticker));
-
   return (
-    <div className="h-screen py-8 w-full max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Stock Data Viewer</h1>
+    <div className="pt-8 w-full max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Risk & Return Analysis</h1>
       <div className="flex flex-col gap-4 py-4">
         <div className="grid grid-cols-12 gap-2">
           <div className="col-span-4">

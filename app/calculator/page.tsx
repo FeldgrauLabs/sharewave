@@ -37,8 +37,8 @@ export default function Page() {
   });
 
   return (
-    <div className="h-screen py-8 w-full max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Forecast Calculator</h1>
+    <div className="pt-8 w-full max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Compound Interest Calculator</h1>
       <div className="flex flex-col gap-4 py-4">
         <div className="grid grid-cols-12 gap-2">
           <div className="col-span-4">
