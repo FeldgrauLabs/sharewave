@@ -11,10 +11,8 @@ import {
   Tooltip as ChartTooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Card, CardContent, CardHeader } from './ui/card';
 import { Separator } from './ui/separator';
 import { BookmarkIcon, BookmarkXIcon, EqualIcon, EqualNotIcon, Grid2X2Icon, Grid2X2XIcon, ImageIcon, MoreHorizontalIcon, PaperclipIcon, SheetIcon, TriangleAlertIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -68,80 +66,6 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
 
   const chartRef = useRef<HTMLDivElement | null>(null);
 
-  const exportImage = async () => {
-    try {
-      if (!chartRef.current) {
-        toast.error('Chart not found');
-        return;
-      }
-      const svg = chartRef.current.querySelector('svg') as SVGSVGElement | null;
-      if (!svg) {
-        toast.error('SVG element not found');
-        return;
-      }
-
-      const serializer = new XMLSerializer();
-      let source = serializer.serializeToString(svg);
-
-      // add name spaces if they are missing
-      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
-      if (!source.match(/^<svg[^>]+xmlns:xlink=/)) {
-        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-      }
-
-      const width = svg.clientWidth || svg.getBoundingClientRect().width;
-      const height = svg.clientHeight || svg.getBoundingClientRect().height;
-      const ratio = window.devicePixelRatio || 1;
-
-      const img = new Image();
-      const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(width * ratio));
-          canvas.height = Math.max(1, Math.round(height * ratio));
-          const ctx = canvas.getContext('2d');
-          if (!ctx) throw new Error('Failed to get canvas context');
-          // white background
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob((blob) => {
-            if (!blob) {
-              toast.error('Failed to export image');
-              URL.revokeObjectURL(url);
-              return;
-            }
-            const link = document.createElement('a');
-            const blobUrl = URL.createObjectURL(blob);
-            link.href = blobUrl;
-            link.download = `risk_return_${range}_${new Date().toISOString()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(blobUrl);
-            URL.revokeObjectURL(url);
-            toast.success('Image exported');
-          }, 'image/png');
-        } catch (err) {
-          URL.revokeObjectURL(url);
-          toast.error('Failed to export image');
-        }
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        toast.error('Failed to load SVG for export');
-      };
-      img.src = url;
-    } catch (err) {
-      toast.error('Unexpected error exporting image');
-    }
-  }
-
   const data = tickers
     .filter((t) => t.cagr[range] !== null && t.risk[range] !== null)
     .map((t) => {
@@ -157,8 +81,6 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
         returnRiskRatio,
       };
     });
-
-  const hasInsufficientData = data.length < tickers.length;
 
   // compute common domain so both axes use the same scale (1:1)
   const values = data.flatMap((d) => [d.risk, d.return]);
@@ -364,7 +286,7 @@ export default function RiskReturnChart({ tickers, range }: RiskReturnChartProps
                   Export as CSV/Excel
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => exportImage()}
+                  onClick={() => exportImage(chartRef, `risk_return_${range}_${new Date().toISOString()}.png`)}
                   disabled={data.length === 0}
                 >
                   <ImageIcon />
@@ -401,3 +323,77 @@ const colorForT = (t: number) => {
   const c2 = hexToRgb(green);
   return rgbToHex([lerp(c1[0], c2[0], tt), lerp(c1[1], c2[1], tt), lerp(c1[2], c2[2], tt)]);
 };
+
+const exportImage = async (chartRef: React.RefObject<HTMLDivElement | null>, title: string) => {
+  try {
+    if (!chartRef.current) {
+      toast.error('Chart not found');
+      return;
+    }
+    const svg = chartRef.current.querySelector('svg') as SVGSVGElement | null;
+    if (!svg) {
+      toast.error('SVG element not found');
+      return;
+    }
+
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+
+    // add name spaces if they are missing
+    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    if (!source.match(/^<svg[^>]+xmlns:xlink=/)) {
+      source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
+
+    const width = svg.clientWidth || svg.getBoundingClientRect().width;
+    const height = svg.clientHeight || svg.getBoundingClientRect().height;
+    const ratio = window.devicePixelRatio || 1;
+
+    const img = new Image();
+    const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(width * ratio));
+        canvas.height = Math.max(1, Math.round(height * ratio));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+        // white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            toast.error('Failed to export image');
+            URL.revokeObjectURL(url);
+            return;
+          }
+          const link = document.createElement('a');
+          const blobUrl = URL.createObjectURL(blob);
+          link.href = blobUrl;
+          link.download = title;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+          URL.revokeObjectURL(url);
+          toast.success('Image exported');
+        }, 'image/png');
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        toast.error('Failed to export image');
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      toast.error('Failed to load SVG for export');
+    };
+    img.src = url;
+  } catch (err) {
+    toast.error('Unexpected error exporting image');
+  }
+}
